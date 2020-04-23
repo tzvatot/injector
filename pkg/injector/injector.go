@@ -70,7 +70,7 @@ func (inj *Engine) injectBean(bean interface{}) error {
 			}
 		}
 	}
-  return nil
+	return nil
 }
 
 func (inj *Engine) getValue(bean interface{}) (val reflect.Value, err error) {
@@ -84,7 +84,6 @@ func (inj *Engine) getValue(bean interface{}) (val reflect.Value, err error) {
 	}
 	return val, nil
 }
-
 
 func (inj *Engine) getTypeFullName(refType reflect.Type) string {
 	return fmt.Sprintf("%s", refType.String())
