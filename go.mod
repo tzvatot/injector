@@ -1,3 +1,3 @@
-module injector
+module github.com/tzvatot/injector
 
 go 1.13
