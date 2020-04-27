@@ -30,6 +30,14 @@ type MyStruct struct {
 	MyInterfaceField MyInterface `inject:"injector.MyImplementation"`
 }
 
+type Foo struct {
+	Bar *Bar `inject:"injector.Bar"`
+}
+
+type Bar struct {
+	Foo *Foo `inject:"injector.Foo"`
+}
+
 func TestInjectStructPointer(t *testing.T) {
 	injector := NewEngine()
 	b := &B{names: []string{"a", "b", "c"}}
@@ -67,6 +75,32 @@ func TestInjectInterfaceImplementation(t *testing.T) {
 	}
 	fmt.Printf("%v", toInject)
 }
+
+
+func TestCyclicInjection(t *testing.T) {
+	injector := NewEngine()
+	foo := &Foo{}
+	bar := &Bar{}
+
+	if err := injector.Register(foo, bar); err != nil {
+		t.Fatalf("failed to register: %v", err)
+	}
+	if err := injector.Inject(); err != nil {
+		t.Fatalf("failed to inject: %v", err)
+	}
+	if foo.Bar == nil {
+		t.Errorf("injection failed - property is nil")
+	}
+	if bar.Foo == nil {
+		t.Errorf("injection failed - property is nil")
+	}
+	if bar.Foo.Bar != bar || foo.Bar.Foo != foo {
+		t.Errorf("injection failed - wrong reference")
+	}
+	fmt.Printf("%v", foo)
+	fmt.Printf("%v", bar)
+}
+
 
 func TestGetFields(t *testing.T) {
 	injector := NewEngine()
