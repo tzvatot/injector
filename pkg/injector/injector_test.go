@@ -76,7 +76,6 @@ func TestInjectInterfaceImplementation(t *testing.T) {
 	fmt.Printf("%v", toInject)
 }
 
-
 func TestCyclicInjection(t *testing.T) {
 	injector := NewEngine()
 	foo := &Foo{}
@@ -100,7 +99,6 @@ func TestCyclicInjection(t *testing.T) {
 	fmt.Printf("%v", foo)
 	fmt.Printf("%v", bar)
 }
-
 
 func TestGetFields(t *testing.T) {
 	injector := NewEngine()
