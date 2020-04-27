@@ -25,6 +25,14 @@ func NewEngine() *Engine {
 func (inj *Engine) Register(beans ...interface{}) error {
 	for _, bean := range beans {
 		inj.beans = append(inj.beans, bean)
+		val, err := inj.getValue(bean)
+		if err != nil {
+			return err
+		}
+		structType := val.Type()
+		typeFullName := inj.getTypeFullName(structType)
+		fmt.Printf("type full name: %s\n", typeFullName)
+		inj.typeToBean[typeFullName] = bean
 	}
 	return nil
 }
@@ -48,9 +56,6 @@ func (inj *Engine) injectBean(bean interface{}) error {
 	if err != nil {
 		return err
 	}
-	typeFullName := inj.getTypeFullName(structType)
-	fmt.Printf("type full name: %s\n", typeFullName)
-	inj.typeToBean[typeFullName] = bean
 	for _, field := range fields {
 		fieldName := field.Name
 		fieldType := field.Type
@@ -62,6 +67,11 @@ func (inj *Engine) injectBean(bean interface{}) error {
 		childName := inj.getContainingTypeFullName(field)
 		fmt.Printf("chile name: %s\n", childName)
 		child := inj.typeToBean[childName]
+		if child == nil {
+			if childName, ok := field.Tag.Lookup("inject"); ok {
+				child = inj.typeToBean[childName]
+			}
+		}
 		if child != nil {
 			f := val.FieldByName(fieldName)
 			if f.CanAddr() && f.IsValid() {
