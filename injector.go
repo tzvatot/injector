@@ -2,8 +2,18 @@ package injector
 
 import (
 	"fmt"
+	"os"
 	"reflect"
 	"strings"
+	"time"
+
+	"github.com/sirupsen/logrus"
+)
+
+const (
+	// Default log format will output [INFO]: 2006-01-02T15:04:05Z07:00 - Log message
+	defaultLogFormat       = "[%lvl%]: %time% - %msg%"
+	defaultTimestampFormat = time.RFC3339
 )
 
 type Injector interface {
@@ -22,6 +32,19 @@ func NewEngine() *Engine {
 	}
 }
 
+var log *logrus.Logger
+
+func init() {
+	setupLogger()
+}
+
+func setupLogger() {
+	logrus.SetFormatter(&logrus.TextFormatter{})
+	logrus.SetOutput(os.Stdout)
+	logrus.SetLevel(logrus.InfoLevel)
+	log = logrus.StandardLogger()
+}
+
 func (inj *Engine) Register(beans ...interface{}) error {
 	for _, bean := range beans {
 		inj.beans = append(inj.beans, bean)
@@ -31,7 +54,7 @@ func (inj *Engine) Register(beans ...interface{}) error {
 		}
 		structType := val.Type()
 		typeFullName := inj.getTypeFullName(structType)
-		fmt.Printf("type full name: %s\n", typeFullName)
+		log.Debugf("type full name: %s\n", typeFullName)
 		inj.typeToBean[typeFullName] = bean
 	}
 	return nil
@@ -59,16 +82,17 @@ func (inj *Engine) injectBean(bean interface{}) error {
 	for _, field := range fields {
 		fieldName := field.Name
 		fieldType := field.Type
-		fmt.Printf("Name: %s, Type: %s\n", fieldName, fieldType)
+		log.Debugf("Name: %s, Type: %s\n", fieldName, fieldType)
 		if fieldType == structType {
-			fmt.Println("not supporting self injection")
+			log.Infof("not supporting self injection")
 			continue
 		}
 		childName := inj.getContainingTypeFullName(field)
-		fmt.Printf("chile name: %s\n", childName)
+		log.Debugf("chile name: %s\n", childName)
 		child := inj.typeToBean[childName]
 		if child == nil {
 			if childName, ok := field.Tag.Lookup("inject"); ok {
+				log.Debugf("chile name: %s\n", childName)
 				child = inj.typeToBean[childName]
 			}
 		}
@@ -76,7 +100,7 @@ func (inj *Engine) injectBean(bean interface{}) error {
 			f := val.FieldByName(fieldName)
 			if f.CanAddr() && f.IsValid() {
 				f.Set(reflect.ValueOf(child))
-				fmt.Printf("Injected %s", child)
+				log.Debugf("Injected %s", child)
 			}
 		}
 	}
