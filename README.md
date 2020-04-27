@@ -45,6 +45,6 @@ result := toInject.MyIncrementor.Inc(5)
 fmt.Println(result) // 6
 ```
 
-##Notes
+## Notes
 - Injected field must be exported in order for assignment to work.
 - Injection of struct pointer is also supported without tags.
