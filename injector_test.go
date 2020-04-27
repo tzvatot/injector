@@ -15,19 +15,19 @@ type B struct {
 	names []string
 }
 
-type MyInterface interface {
-	Foo(int) int
+type Incrementor interface {
+	Inc(int) int
 }
 
 type MyImplementation struct {
 }
 
-func (m *MyImplementation) Foo(x int) int {
+func (m *MyImplementation) Inc(x int) int {
 	return x + 1
 }
 
 type MyStruct struct {
-	MyInterfaceField MyInterface `inject:"injector.MyImplementation"`
+	MyIncrementor Incrementor `inject:"injector.MyImplementation"`
 }
 
 type Foo struct {
@@ -57,19 +57,19 @@ func TestInjectStructPointer(t *testing.T) {
 
 func TestInjectInterfaceImplementation(t *testing.T) {
 	injector := NewEngine()
-	impl := &MyImplementation{}
+	incrementor := &MyImplementation{}
 	toInject := &MyStruct{}
 
-	if err := injector.Register(impl, toInject); err != nil {
+	if err := injector.Register(incrementor, toInject); err != nil {
 		t.Fatalf("failed to register: %v", err)
 	}
 	if err := injector.Inject(); err != nil {
 		t.Fatalf("failed to inject: %v", err)
 	}
-	if toInject.MyInterfaceField == nil {
+	if toInject.MyIncrementor == nil {
 		t.Errorf("injection failed - property is nil")
 	}
-	actual := toInject.MyInterfaceField.Foo(5)
+	actual := toInject.MyIncrementor.Inc(5)
 	if actual != 6 {
 		t.Errorf("Unexpected result: %d", actual)
 	}
