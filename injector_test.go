@@ -2,6 +2,7 @@ package injector
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 )
 
@@ -44,10 +45,10 @@ func TestInjectStructPointer(t *testing.T) {
 	a := &A{num: 1, s: "s"}
 
 	if err := injector.Register(b, a); err != nil {
-		t.Fatalf("failed to register: %v", err)
+		t.Errorf("failed to register: %v", err)
 	}
 	if err := injector.Inject(); err != nil {
-		t.Fatalf("failed to inject: %v", err)
+		t.Errorf("failed to inject: %v", err)
 	}
 	if a.B == nil {
 		t.Errorf("injection failed - property is nil")
@@ -61,10 +62,10 @@ func TestInjectInterfaceImplementation(t *testing.T) {
 	toInject := &MyStruct{}
 
 	if err := injector.Register(incrementor, toInject); err != nil {
-		t.Fatalf("failed to register: %v", err)
+		t.Errorf("failed to register: %v", err)
 	}
 	if err := injector.Inject(); err != nil {
-		t.Fatalf("failed to inject: %v", err)
+		t.Errorf("failed to inject: %v", err)
 	}
 	if toInject.MyIncrementor == nil {
 		t.Errorf("injection failed - property is nil")
@@ -82,10 +83,10 @@ func TestCyclicInjection(t *testing.T) {
 	bar := &Bar{}
 
 	if err := injector.Register(foo, bar); err != nil {
-		t.Fatalf("failed to register: %v", err)
+		t.Errorf("failed to register: %v", err)
 	}
 	if err := injector.Inject(); err != nil {
-		t.Fatalf("failed to inject: %v", err)
+		t.Errorf("failed to inject: %v", err)
 	}
 	if foo.Bar == nil {
 		t.Errorf("injection failed - property is nil")
@@ -98,6 +99,19 @@ func TestCyclicInjection(t *testing.T) {
 	}
 	fmt.Printf("%v", foo)
 	fmt.Printf("%v", bar)
+}
+
+func TestDoubleRegister(t *testing.T) {
+	injector := NewEngine()
+	a := &A{}
+
+	err := injector.Register(a, a)
+	if err == nil {
+		t.Errorf("expected to fail")
+	}
+	if !strings.Contains(err.Error(), "already a registered") {
+		t.Errorf("wrong error message")
+	}
 }
 
 func TestGetFields(t *testing.T) {

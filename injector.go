@@ -31,6 +31,9 @@ func (inj *Engine) Register(beans ...interface{}) error {
 		}
 		structType := val.Type()
 		typeFullName := inj.getTypeFullName(structType)
+		if inj.typeToBean[typeFullName] != nil {
+			return fmt.Errorf("there's already a registered bean of type '%s'", typeFullName)
+		}
 		inj.typeToBean[typeFullName] = bean
 	}
 	return nil
