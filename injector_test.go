@@ -45,13 +45,13 @@ func TestInjectStructPointer(t *testing.T) {
 	a := &A{num: 1, s: "s"}
 
 	if err := injector.Register(b, a); err != nil {
-		t.Errorf("failed to register: %v", err)
+		t.Fatalf("failed to register: %v", err)
 	}
 	if err := injector.Inject(); err != nil {
-		t.Errorf("failed to inject: %v", err)
+		t.Fatalf("failed to inject: %v", err)
 	}
 	if a.B == nil {
-		t.Errorf("injection failed - property is nil")
+		t.Fatalf("injection failed - property is nil")
 	}
 	fmt.Printf("%v", a)
 }
@@ -62,17 +62,17 @@ func TestInjectInterfaceImplementation(t *testing.T) {
 	toInject := &MyStruct{}
 
 	if err := injector.Register(incrementor, toInject); err != nil {
-		t.Errorf("failed to register: %v", err)
+		t.Fatalf("failed to register: %v", err)
 	}
 	if err := injector.Inject(); err != nil {
-		t.Errorf("failed to inject: %v", err)
+		t.Fatalf("failed to inject: %v", err)
 	}
 	if toInject.MyIncrementor == nil {
-		t.Errorf("injection failed - property is nil")
+		t.Fatalf("injection failed - property is nil")
 	}
 	actual := toInject.MyIncrementor.Inc(5)
 	if actual != 6 {
-		t.Errorf("Unexpected result: %d", actual)
+		t.Fatalf("Unexpected result: %d", actual)
 	}
 	fmt.Printf("%v", toInject)
 }
@@ -83,19 +83,19 @@ func TestCyclicInjection(t *testing.T) {
 	bar := &Bar{}
 
 	if err := injector.Register(foo, bar); err != nil {
-		t.Errorf("failed to register: %v", err)
+		t.Fatalf("failed to register: %v", err)
 	}
 	if err := injector.Inject(); err != nil {
-		t.Errorf("failed to inject: %v", err)
+		t.Fatalf("failed to inject: %v", err)
 	}
 	if foo.Bar == nil {
-		t.Errorf("injection failed - property is nil")
+		t.Fatalf("injection failed - property is nil")
 	}
 	if bar.Foo == nil {
-		t.Errorf("injection failed - property is nil")
+		t.Fatalf("injection failed - property is nil")
 	}
 	if bar.Foo.Bar != bar || foo.Bar.Foo != foo {
-		t.Errorf("injection failed - wrong reference")
+		t.Fatalf("injection failed - wrong reference")
 	}
 	fmt.Printf("%v", foo)
 	fmt.Printf("%v", bar)
@@ -107,11 +107,54 @@ func TestDoubleRegister(t *testing.T) {
 
 	err := injector.Register(a, a)
 	if err == nil {
-		t.Errorf("expected to fail")
+		t.Fatalf("expected to fail")
 	}
 	if !strings.Contains(err.Error(), "already a registered") {
-		t.Errorf("wrong error message")
+		t.Fatalf("wrong error message")
 	}
+}
+
+type Collection struct {
+	Elements []Element `inject:"injector.ElementImplementorA,injector.ElementImplementorB"`
+}
+
+type Element interface {
+  Do()
+}
+
+type ElementImplementorA struct {}
+
+func (impl *ElementImplementorA) Do() {
+	fmt.Println("A")
+}
+
+type ElementImplementorB struct {}
+
+func (impl *ElementImplementorB) Do() {
+	fmt.Println("B")
+}
+
+func TestSliceInjection(t *testing.T) {
+	injector := NewEngine()
+	implA := &ElementImplementorA{}
+	implB := &ElementImplementorB{}
+	collection := &Collection{}
+	if err := injector.Register(collection, implA, implB); err != nil {
+		t.Fatalf("failed to register: %v", err)
+	}
+	if err := injector.Inject(); err != nil {
+		t.Fatalf("failed to inject: %v", err)
+	}
+	if len(collection.Elements) < 2 {
+		t.Fatalf("failed to inject multiple implementations")
+	}
+	if collection.Elements[0] == implA && collection.Elements[1] == implB {
+		return // works
+	}
+	if collection.Elements[1] == implA && collection.Elements[0] == implB {
+		return // works
+	}
+  t.Fatalf("wrong implementations injected")
 }
 
 func TestGetFields(t *testing.T) {
@@ -121,7 +164,7 @@ func TestGetFields(t *testing.T) {
 		t.Fatalf("failed to get fields: %v", err)
 	}
 	if len(fields) != 3 {
-		t.Errorf("expected 3 fields")
+		t.Fatalf("expected 3 fields")
 	}
 	for _, field := range fields {
 		fieldName := field.Name

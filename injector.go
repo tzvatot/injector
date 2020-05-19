@@ -68,8 +68,19 @@ func (inj *Engine) injectBean(bean interface{}) error {
 		childName := inj.getContainingTypeFullName(field)
 		child := inj.typeToBean[childName]
 		if child == nil {
-			if childName, ok := field.Tag.Lookup("inject"); ok {
-				child = inj.typeToBean[childName]
+			if implementorList, ok := field.Tag.Lookup("inject"); ok {
+				implementors := strings.Split(implementorList, ",")
+				if len(implementors) > 1 {
+					children := make([]interface{}, 0)
+					for _, implName := range implementors {
+						impl := inj.typeToBean[implName]
+						children = append(children, impl)
+					}
+					child = children
+				} else {
+					childName = implementors[0]
+					child = inj.typeToBean[childName]
+				}
 			}
 		}
 		if child != nil {
